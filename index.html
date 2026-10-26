@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="禾森工作台">
+<meta name="theme-color" content="#3d5a45">
+<title>禾森｜治療師工作台</title>
+<style>body{margin:0;font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;background:#f6f8f6;color:#3d5a45}#l{text-align:center;margin-top:40vh;font-size:16px}</style>
+</head>
+<body>
+<p id="l">禾森治療師工作台　載入中…</p>
+<script>
+/* 禾森治療師工作台入口：畫面與資料都來自原本的 Apps Script，
+   這頁只負責以「不帶 Google 登入」的方式連線，避免手機登入多個 Google 帳號時打不開。 */
+(function () {
+  var API = 'https://script.google.com/macros/s/AKfycbzKywGdsJkcukjKAxLri6JBJ_-9E98Cq_eqD-QYr31NkBRePovuIQpsj8VF_1ho7XuL/exec';
+  var SHIM = "(function(){var API=" + JSON.stringify(API) + ";" +
+    "function mk(ok,fail){return new Proxy({},{get:function(_,name){" +
+    "if(name==='withSuccessHandler')return function(h){return mk(h,fail);};" +
+    "if(name==='withFailureHandler')return function(h){return mk(ok,h);};" +
+    "if(typeof name!=='string')return undefined;" +
+    "return function(){var args=Array.prototype.slice.call(arguments);" +
+    "fetch(API,{method:'POST',body:JSON.stringify({fn:name,args:args}),credentials:'omit',redirect:'follow'})" +
+    ".then(function(r){return r.json();})" +
+    ".then(function(j){if(j&&j.ok){ok&&ok(j.result);}else{fail&&fail(new Error((j&&j.error)||'系統暫時無法連線。'));}})" +
+    ".catch(function(){fail&&fail(new Error('連線失敗，請確認網路後再試一次。'));});};}});}" +
+    "window.google={script:{run:mk(null,null)}};})();";
+  function fail() { document.getElementById('l').textContent = '載入失敗，請確認網路後重新整理。'; }
+  fetch(API + '?raw=1', { credentials: 'omit', redirect: 'follow' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(function (html) {
+      if (html.indexOf('治療師') < 0) throw new Error('bad page');
+      var inject = '<meta name="viewport" content="width=device-width, initial-scale=1"><script>' + SHIM + '<\/script>';
+      var out = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + inject; }) : inject + html;
+      out = out.replace(/<base [^>]*>/i, '');
+      document.open(); document.write(out); document.close();
+    })
+    .catch(fail);
+})();
+</script>
+</body>
+</html>
