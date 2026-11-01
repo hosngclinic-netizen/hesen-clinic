@@ -27,17 +27,34 @@
     ".then(function(j){if(j&&j.ok){ok&&ok(j.result);}else{fail&&fail(new Error((j&&j.error)||'系統暫時無法連線。'));}})" +
     ".catch(function(){fail&&fail(new Error('連線失敗，請確認網路後再試一次。'));});};}});}" +
     "window.google={script:{run:mk(null,null)}};})();";
-  function fail() { document.getElementById('l').textContent = '載入失敗，請確認網路後重新整理。'; }
+  var KEY = 'hesen_shell_v1';   // 加速：手機記住上次的工作台畫面，打開直接顯示，背景再確認有沒有新版
+  function fail() { var l = document.getElementById('l'); if (l) l.textContent = '載入失敗，請確認網路後重新整理。'; }
+  function load() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function save(h) { try { localStorage.setItem(KEY, h); } catch (e) {} }
+  function show(html) {
+    var inject = '<meta name="viewport" content="width=device-width, initial-scale=1"><script>' + SHIM + '<\/script>';
+    var out = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + inject; }) : inject + html;
+    out = out.replace(/<base [^>]*>/i, '');
+    document.open(); document.write(out); document.close();
+  }
+  function notice() {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = '工作台有新版本，點這裡更新';
+    b.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;padding:12px;border:0;border-radius:12px;background:#294638;color:#fff;font-size:15px;box-shadow:0 4px 14px rgba(0,0,0,.2)';
+    b.onclick = function () { location.reload(); };
+    (document.body || document.documentElement).appendChild(b);
+  }
+  var cached = load();
+  if (cached) setTimeout(function () { show(cached); }, 0);   // 等這頁讀完再換畫面
   fetch(API + '?raw=1', { credentials: 'omit', redirect: 'follow' })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
     .then(function (html) {
       if (html.indexOf('治療師') < 0) throw new Error('bad page');
-      var inject = '<meta name="viewport" content="width=device-width, initial-scale=1"><script>' + SHIM + '<\/script>';
-      var out = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + inject; }) : inject + html;
-      out = out.replace(/<base [^>]*>/i, '');
-      document.open(); document.write(out); document.close();
+      if (!cached) { save(html); show(html); return; }
+      if (html !== cached) { save(html); notice(); }
     })
-    .catch(fail);
+    .catch(function () { if (!cached) fail(); });
 })();
 </script>
 </body>
